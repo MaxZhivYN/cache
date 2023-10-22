@@ -27,6 +27,16 @@ public class BasicCache<K, V> implements Cache<K, V> {
      */
     @Override
     public boolean put(K key, V obj) {
+        var it = cache.iterator();
+
+        while (it.hasNext()) {
+            CacheItem<K, V> next = it.next();
+            if (key.equals(next.key())) {
+                it.remove();
+                break;
+            }
+        }
+
         cache.offer(new CacheItem<>(key, obj));
         return true;
     }
@@ -67,15 +77,5 @@ public class BasicCache<K, V> implements Cache<K, V> {
             }
         }
         return false;
-    }
-
-    private class Item {
-        K key;
-        V value;
-
-        Item(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
     }
 }

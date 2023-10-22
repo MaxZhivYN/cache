@@ -5,6 +5,7 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 /**
  * This class implementing a simple cache that may store a value under a key.
@@ -44,10 +45,26 @@ public class EvictiveCache<K, V> implements Cache<K, V> {
         this(new LinkedList<>(), maxCapacity);
     }
 
+    /**
+     * Testing purpose only.
+     *
+     * @param cache explicitly set storage of this cache in order to have
+     *              a control over it while asserting results
+     * @param maxCapacity of a storage in this cache
+     * @param objects initially set to this cache (may contain duplicity)
+     */
     EvictiveCache(Deque<CacheItem<K, V>> cache, int maxCapacity, CacheItem<K, V>... objects) {
         this.cache = cache;
         this.maxCapacity = maxCapacity;
-        this.cache.addAll(Arrays.asList(objects));
+
+        var noDuplicates = Arrays.stream(objects)
+                .collect(Collectors.groupingBy(CacheItem::key))
+                .values()
+                .stream()
+                .map(l -> l.get(0))
+                .toList();
+
+        this.cache.addAll(noDuplicates);
     }
 
     /**
@@ -63,6 +80,17 @@ public class EvictiveCache<K, V> implements Cache<K, V> {
     @Override
     public boolean put(K key, V obj) {
         if (cache.size() >= maxCapacity) cache.poll();
+
+        var it = cache.iterator();
+
+        while (it.hasNext()) {
+            CacheItem<K, V> next = it.next();
+            if (key.equals(next.key())) {
+                it.remove();
+                break;
+            }
+        }
+
         cache.offer(new CacheItem<>(key, obj));
         return true;
     }
@@ -117,5 +145,14 @@ public class EvictiveCache<K, V> implements Cache<K, V> {
             }
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return "EvictiveCache{" +
+                "size=" + cache.size() +
+                ", maxCapacity=" + maxCapacity +
+                ", cache=" + cache +
+                '}';
     }
 }

@@ -30,6 +30,37 @@ class EvictiveCacheTest {
     }
 
     @Test
+    void shouldOverrideExistingObjectWhenEqualKeyFound() {
+        var spyInternalStorage = spy(new LinkedList<CacheItem<String, String>>());
+        var cache = new EvictiveCache<>(spyInternalStorage, 5);
+
+        cache.put("1", "Hello");
+        cache.put("1", "Hello");
+        cache.put("1", "Hello2");
+
+        assertThat(spyInternalStorage)
+                .doesNotHaveDuplicates()
+                .hasSize(1);
+    }
+
+    @Test
+    void shouldExcludeObjectWithEqualsKeysWhileInitializingCacheViaTestingConstructor() {
+        var spyInternalStorage = spy(new LinkedList<CacheItem<String, String>>());
+        var cache = new EvictiveCache<>(
+                spyInternalStorage,
+                5,
+                new CacheItem<>("1", "Hello"),
+                new CacheItem<>("1", "Hello"),
+                new CacheItem<>("1", "Hello2"),
+                new CacheItem<>("2", "Hello2")
+        );
+
+        assertThat(spyInternalStorage)
+                .doesNotHaveDuplicates()
+                .hasSize(2);
+    }
+
+    @Test
     void shouldRetrieveObjectFromTheCacheSinceObjectAssociatedWithGivenKeyFound() {
         var spyInternalStorage = spy(new LinkedList<CacheItem<String, String>>());
         var cache = new EvictiveCache<>(spyInternalStorage, 5);
